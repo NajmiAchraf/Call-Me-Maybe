@@ -2,8 +2,10 @@ from src import *
 
 FUNCTIONS: dict[str, Callable[..., Any]] = {
     "fn_add_numbers": fn_add_numbers,
+    "fn_get_square_root": fn_get_square_root,
     "fn_greet": fn_greet,
     "fn_reverse_string": fn_reverse_string,
+    "fn_substitute_string_with_regex": fn_substitute_string_with_regex,
 }
 
 
