@@ -2,14 +2,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
 from pydantic import BaseModel, Field
 
-from .functions import fn_add_numbers, fn_greet, fn_reverse_string
+from .functions import (
+    fn_add_numbers,
+    fn_get_square_root,
+    fn_greet,
+    fn_reverse_string,
+    fn_substitute_string_with_regex,
+)
 from .models import (
     FunctionDefinition,
     FunctionTests,
@@ -51,8 +59,10 @@ __all__ += [
     "ToolRouter",
     # functions
     "fn_add_numbers",
+    "fn_get_square_root",
     "fn_greet",
     "fn_reverse_string",
+    "fn_substitute_string_with_regex",
     "parse_args",
     "load_functions_definitions",
     "load_prompts",
