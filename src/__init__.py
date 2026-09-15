@@ -44,6 +44,8 @@ __all__ = [
     "json",
     "BaseModel",
     "Field",
+    "re",
+    "math",
     "np",
     "os",
 ]
