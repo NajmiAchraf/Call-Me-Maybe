@@ -17,7 +17,7 @@ def load_functions_definitions(path: str) -> List[FunctionDefinition]:
     return [FunctionDefinition.model_validate(item) for item in items]
 
 
-def load_prompts(path: str) -> List[FunctionTests]:
+def load_prompts(path: str) -> List[Prompt]:
     items = load_json(path)
 
-    return [FunctionTests.model_validate(item) for item in items]
+    return [Prompt.model_validate(item) for item in items]

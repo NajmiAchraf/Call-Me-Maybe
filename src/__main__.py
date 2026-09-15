@@ -17,21 +17,12 @@ def main() -> None:
         print(f"Error: {e}")
         sys.exit(1)
 
-    definitions = load_functions_definitions(args.functions_definition)
-    prompt = load_prompts(args.input)
-
-    router = ToolRouter(definitions)
-    print(router)
-
-    # Manual test call (Step 1+2+3 baseline)
-    call = ToolCall.model_validate(
-        {"name": "fn_add_numbers", "parameters": {"a": 40, "b": 2}}
+    function_definitions = load_functions_definitions(
+        args.functions_definition
     )
-    result = router.execute(call)
-
-    print(
-        json.dumps({"name": call.name, "result": result}, ensure_ascii=False)
-    )
+    prompts = load_prompts(args.input)
+    model = Small_LLM_Model()
+    rt = Generator(model, prompts, function_definitions)
 
 
 if __name__ == "__main__":

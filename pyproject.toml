@@ -9,4 +9,14 @@ dependencies = [
     "numpy>=1.24.0",
     "isort>=5.12.0",
     "requests>=2.34.2",
+    "llm-sdk"
 ]
+
+[tool.uv.workspace]
+members = ["llm_sdk"] 
+
+[tool.uv.sources]
+llm-sdk = { workspace = true }
+
+[tool.mypy]
+exclude = ["llm_sdk/"]
