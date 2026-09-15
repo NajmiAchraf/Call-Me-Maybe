@@ -12,15 +12,19 @@ FUNCTIONS: dict[str, Callable[..., Any]] = {
 class ToolRouter:
     def __init__(self, definitions: list[FunctionDefinition]) -> None:
         self._defs = {d.name: d for d in definitions}
-        self._params = {d.name: list(d.parameters.keys()) for d in definitions}
+        self._json = definitions
 
     def __str__(self) -> str:
-        return (
-            f"ToolRouter with functions:\n"
-            f"{list(self._defs.keys())}\n"
-            f"Parameters:\n"
-            f"{self._params}"
+        prompt: list[str] = ["ToolRouter with functions:"]
+        for fn in self._json:
+            params = ", ".join(
+                f"{k}: {v.type}" for k, v in fn.parameters.items()
+            )
+            prompt.append(f"  {fn.name}({params}): {fn.description}")
+        prompt.append(
+            f"Output valid ONLY JSON as: {{'name': {{'<fn_function_name>'}}, 'args': {{<arguments_dict>}}}}"
         )
+        return "\n".join(prompt)
 
     def execute(self, call: ToolCall) -> Any:
         if call.name not in self._defs:

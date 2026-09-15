@@ -6,6 +6,11 @@ def fn_add_numbers(a: float, b: float) -> float:
     return float(a) + float(b)
 
 
+def fn_get_square_root(n: float) -> float:
+    """Return the square root of a number."""
+    return math.sqrt(n)
+
+
 def fn_greet(name: str) -> str:
     """Return a greeting message."""
     return f"Hello, {name}!"
@@ -16,13 +21,11 @@ def fn_reverse_string(s: str) -> str:
     return s[::-1]
 
 
-def fn_get_square_root(a: int) -> float:
-    """Return the square root of a number."""
-    return math.sqrt(a)
-
-
 def fn_substitute_string_with_regex(
-    s: str, pattern: str, replacement: str
+    source_string: str,
+    regex: str,
+    replacement: str,
 ) -> str:
-    """Substitute all occurrences of a pattern in a string with a replacement."""
-    return re.sub(pattern, replacement, s)
+    """Substitute parts of a string that match a regex pattern with a replacement string."""
+
+    return re.sub(regex, replacement, source_string)
