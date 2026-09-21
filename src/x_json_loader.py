@@ -31,23 +31,7 @@ class XLoader:
         prompt.append(
             f"Output valid ONLY JSON as: {{'name': {{'<fn_name>'}}, 'args': {{<arguments_dict>}}}}"
         )
-        prompt.append("""JSON general Schema :{
-  "system": {
-    "role": "data_extraction_and_shaping_engine",
-    "rule": "Return raw, valid JSON only. No markdown fences like ```json, no intro text, no outro text."
-  },
-  "schema": {
-    "field_name": "string (1-58 chars)",
-    "score": "integer (1-5)",
-    "tags": ["string"]
-  },
-  "constraints": {
-    "output_format": "JSON",
-    "strict_types": true
-  },
-  "input_data": "PUT_YOUR_TEXT_OR_DATA_HERE"
-}
-""")
+
         self.fn_defs_as_prompt = "\n".join(prompt)
 
     def _load_json(self, path: str) -> List:

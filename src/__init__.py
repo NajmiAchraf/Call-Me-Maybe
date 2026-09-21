@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
-from generator import Generator
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
 from .models import FunctionDefinition, Prompt
+from .generator import Generator
 from .parser import parse_args
 from .x_json_loader import XLoader
 

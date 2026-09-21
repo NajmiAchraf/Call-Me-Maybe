@@ -9,7 +9,8 @@ dependencies = [
     "numpy>=1.24.0",
     "isort>=5.12.0",
     "requests>=2.34.2",
-    "llm-sdk"
+    "llm-sdk",
+    "accelerate>=0.20.0",
 ]
 
 [tool.uv.workspace]
@@ -20,3 +21,6 @@ llm-sdk = { workspace = true }
 
 [tool.mypy]
 exclude = ["llm_sdk/"]
+
+[tool.uv]
+link-mode = "symlink"
