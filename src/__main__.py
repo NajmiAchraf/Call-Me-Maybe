@@ -4,8 +4,12 @@ from pathlib import Path
 # Get the path of the folder you want to add
 project_root = Path(__file__).resolve().parents[1]
 
+
 # Inject it into Python's lookup path list
 sys.path.append(str(project_root))
+sys.path.append(str(project_root / "src"))
+sys.path.append(str(project_root / "llm_sdk"))
+
 
 from src import *
 
@@ -17,12 +21,18 @@ def main() -> None:
         print(f"Error: {e}")
         sys.exit(1)
 
-    function_definitions = load_functions_definitions(
-        args.functions_definition
+    x_loader = XLoader(
+        path_functions_definition=args.functions_definition,
+        path_prompts=args.input,
     )
-    prompts = load_prompts(args.input)
-    model = Small_LLM_Model()
-    rt = Generator(model, prompts, function_definitions)
+
+    function_definitions = x_loader.fn_defs_as_prompt
+    prompts = x_loader.prompts
+
+    # print(function_definitions)
+    # print(prompts)
+
+    Generator(prompts, function_definitions)
 
 
 if __name__ == "__main__":

@@ -1,23 +1,72 @@
 from src import *
 
 
-def load_json(path: str) -> list:
-    with open(path, "r", encoding="utf-8") as f:
-        raw = json.load(f)
+class XLoader:
+    _function_definitions: List[FunctionDefinition]
+    prompts: List[Prompt]
+    fn_defs_as_prompt: str
 
-    if not isinstance(raw, list):
-        raise ValueError("Invalid function calling format")
+    def __init__(
+        self,
+        path_functions_definition: str,
+        path_prompts: str,
+        # path_output: str | None = None,
+    ) -> None:
+        self._load_functions_definitions(path_functions_definition)
+        self._load_prompts(path_prompts)
 
-    return raw
+        self._fn_defs_to_prompt()
 
+    def _fn_defs_to_prompt(self) -> None:
+        prompt: List[str] = [
+            "STRICT SYSTEM RULE: use ONLY the matching function from list below.\n"
+            "if NO function matches the user's intent (even if types match), set name 'none.'\n"
+            "Never use an unrelated function for different task.\n\n"
+        ]
+        for fn in self._function_definitions:
+            params = ", ".join(
+                f"{k}: {v.type}" for k, v in fn.parameters.items()
+            )
+            prompt.append(f"  {fn.name}({params}): {fn.description}")
+        prompt.append(
+            f"Output valid ONLY JSON as: {{'name': {{'<fn_name>'}}, 'args': {{<arguments_dict>}}}}"
+        )
+        prompt.append("""JSON general Schema :{
+  "system": {
+    "role": "data_extraction_and_shaping_engine",
+    "rule": "Return raw, valid JSON only. No markdown fences like ```json, no intro text, no outro text."
+  },
+  "schema": {
+    "field_name": "string (1-58 chars)",
+    "score": "integer (1-5)",
+    "tags": ["string"]
+  },
+  "constraints": {
+    "output_format": "JSON",
+    "strict_types": true
+  },
+  "input_data": "PUT_YOUR_TEXT_OR_DATA_HERE"
+}
+""")
+        self.fn_defs_as_prompt = "\n".join(prompt)
 
-def load_functions_definitions(path: str) -> List[FunctionDefinition]:
-    items = load_json(path)
+    def _load_json(self, path: str) -> List:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
 
-    return [FunctionDefinition.model_validate(item) for item in items]
+        if not isinstance(raw, List):
+            raise ValueError("Invalid function calling format")
 
+        return raw
 
-def load_prompts(path: str) -> List[Prompt]:
-    items = load_json(path)
+    def _load_functions_definitions(self, path: str) -> None:
+        items = self._load_json(path)
 
-    return [Prompt.model_validate(item) for item in items]
+        self._function_definitions = [
+            FunctionDefinition.model_validate(item) for item in items
+        ]
+
+    def _load_prompts(self, path: str) -> None:
+        items = self._load_json(path)
+
+        self.prompts = [Prompt.model_validate(item) for item in items]

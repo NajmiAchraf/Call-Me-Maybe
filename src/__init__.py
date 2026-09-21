@@ -9,17 +9,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
-from ..llm_sdk.llm_sdk import Small_LLM_Model
+from generator import Generator
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
-from x_generator import Generator
 
 from .models import FunctionDefinition, Prompt
 from .parser import parse_args
-from .x_json_loader import (
-    load_functions_definitions,
-    load_prompts,
-)
+from .x_json_loader import XLoader
 
 __all__ = [
     "annotations",
@@ -30,7 +26,6 @@ __all__ = [
     "Dict",
     "List",
     "Generator",
-    "Small_LLM_Model",
     "Literal",
     "json",
     "BaseModel",
@@ -50,6 +45,5 @@ __all__ += [
     "Prompt",
     # parsing functions
     "parse_args",
-    "load_functions_definitions",
-    "load_prompts",
+    "XLoader",
 ]
