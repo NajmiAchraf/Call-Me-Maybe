@@ -85,7 +85,6 @@ def parse_args():
 
     parser.add_argument(
         "--output",
-        type=parse_path_accuracy,
         default=f"{project_root}/data/output/function_calling_results.json",
         help="Path to the output file",
     )

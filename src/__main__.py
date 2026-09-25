@@ -15,29 +15,20 @@ from src import *
 
 
 def main() -> None:
-    try:
-        args = parse_args()
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    
+    args = parse_args()
 
     x_loader = XLoader(
         path_functions_definition=args.functions_definition,
         path_prompts=args.input,
     )
 
-    function_definitions = x_loader.fn_defs_as_prompt
-    prompts = x_loader.prompts
-
-    # print(function_definitions)
-    # print(prompts)
-
-    Generator(prompts, function_definitions)
+    Generator(
+        prompts=x_loader.prompts,
+        fn_definitions=x_loader.function_definitions,
+        output_path=args.output,
+    )
 
 
 if __name__ == "__main__":
-    # try:
     main()
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     sys.exit(1)
