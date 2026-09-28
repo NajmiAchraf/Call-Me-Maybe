@@ -15,7 +15,6 @@ from src import *
 
 
 def main() -> None:
-    
     args = parse_args()
 
     x_loader = XLoader(

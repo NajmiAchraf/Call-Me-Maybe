@@ -10,8 +10,10 @@ class XLoader:
         path_functions_definition: str,
         path_prompts: str,
     ) -> None:
-        self._load_functions_definitions(path_functions_definition)
-        self._load_prompts(path_prompts)
+        self.function_definitions = self._load_functions_definitions(
+            path_functions_definition
+        )
+        self.prompts = self._load_prompts(path_prompts)
 
     def _load_json(self, path: str) -> List:
         with open(path, "r", encoding="utf-8") as f:
@@ -20,12 +22,12 @@ class XLoader:
             raise ValueError("Invalid JSON format: expected array")
         return raw
 
-    def _load_functions_definitions(self, path: str) -> None:
+    def _load_functions_definitions(
+        self, path: str
+    ) -> List[FunctionDefinition]:
         items = self._load_json(path)
-        self.function_definitions = [
-            FunctionDefinition.model_validate(item) for item in items
-        ]
+        return [FunctionDefinition.model_validate(item) for item in items]
 
-    def _load_prompts(self, path: str) -> None:
+    def _load_prompts(self, path: str) -> List[Prompt]:
         items = self._load_json(path)
-        self.prompts = [Prompt.model_validate(item) for item in items]
+        return [Prompt.model_validate(item) for item in items]

@@ -17,7 +17,6 @@ class Generator:
 
         self._run()
 
-
     def _run(self) -> None:
         results: List[Dict[str, Any]] = []
         total = len(self.prompts)
@@ -67,13 +66,15 @@ class Generator:
         return (
             f"System: You are an API function calling bot.\n"
             f"Available tools:\n{tools_str}\n\n"
-            f"User Request: \"{user_prompt}\"\n\n"
+            f'User Request: "{user_prompt}"\n\n'
             f"Respond ONLY with a valid JSON object formatted as:\n"
             f'{{"name": "<function_name>", "parameters": {{<arguments>}}}}\n'
             f"JSON Output:"
         )
 
-    def _generate_with_slm(self, prompt: str, max_new_tokens: int = 100) -> str:
+    def _generate_with_slm(
+        self, prompt: str, max_new_tokens: int = 100
+    ) -> str:
         """
         Core SLM Token Generation Loop using:
         - slm_model.encode()
@@ -122,9 +123,13 @@ class Generator:
 
         return generated_text
 
-    def _cast_parameters(self, fn_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _cast_parameters(
+        self, fn_name: str, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Ensures all numbers (int and float) are converted to float format (e.g., 2 -> 2.0)."""
-        fn_def = next((f for f in self.fn_definitions if f.name == fn_name), None)
+        fn_def = next(
+            (f for f in self.fn_definitions if f.name == fn_name), None
+        )
         if not fn_def:
             return params
 
@@ -134,7 +139,9 @@ class Generator:
             type_str = expected_type.type if expected_type else ""
 
             # Convert any integer/number parameter directly to float
-            if type_str in ["number", "integer"] or isinstance(val, (int, float)):
+            if type_str in ["number", "integer"] or isinstance(
+                val, (int, float)
+            ):
                 try:
                     casted[param_name] = float(val)
                 except (ValueError, TypeError):
@@ -153,12 +160,18 @@ class Generator:
             match = re.search(r"\{.*\}", raw_text, re.DOTALL)
             if match:
                 data = json.loads(match.group(0))
-                if isinstance(data, dict) and "name" in data and "parameters" in data:
+                if (
+                    isinstance(data, dict)
+                    and "name" in data
+                    and "parameters" in data
+                ):
                     fn_name = data["name"]
                     raw_params = data.get("parameters", {})
 
                     # Run parameter values through float conversion
-                    data["parameters"] = self._cast_parameters(fn_name, raw_params)
+                    data["parameters"] = self._cast_parameters(
+                        fn_name, raw_params
+                    )
                     return data
         except Exception:
             pass
