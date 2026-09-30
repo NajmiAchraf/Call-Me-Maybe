@@ -1,4 +1,9 @@
-from src import *
+from __future__ import annotations
+
+import json
+from typing import Any, List
+
+from .models import FunctionDefinition, Prompt
 
 
 class XLoader:
@@ -15,7 +20,7 @@ class XLoader:
         )
         self.prompts = self._load_prompts(path_prompts)
 
-    def _load_json(self, path: str) -> List:
+    def _load_json(self, path: str) -> List[Any]:
         with open(path, "r", encoding="utf-8") as f:
             raw = json.load(f)
         if not isinstance(raw, list):

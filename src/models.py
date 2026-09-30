@@ -1,4 +1,8 @@
-from src import *
+from __future__ import annotations
+
+from typing import Dict
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 
 class Prompt(BaseModel):
@@ -12,7 +16,8 @@ class Type(BaseModel):
     def validate_type(self) -> Self:
         if self.type not in ["number", "integer", "string", "boolean"]:
             raise ValueError(
-                "Invalid type. Must be one of: number, integer, string, boolean"
+                "Invalid type. Must be one of:"
+                "number, integer, string, boolean"
             )
         return self
 
@@ -20,5 +25,5 @@ class Type(BaseModel):
 class FunctionDefinition(BaseModel):
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
-    parameters: Dict[str, Type] = Field(default_factory=Dict)
+    parameters: Dict[str, Type] = Field(default_factory=dict)
     returns: Type

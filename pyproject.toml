@@ -25,11 +25,11 @@ exclude = ["llm_sdk/"]
 [tool.uv]
 link-mode = "symlink"
 
-warn_return_any = true
-warn_unused_ignores = true
-ignore_missing_imports = true
-disallow_untyped_defs = true
-check_untyped_defs = true
+# warn_return_any = true
+# warn_unused_ignores = true
+# ignore_missing_imports = true
+# disallow_untyped_defs = true
+# check_untyped_defs = true
 
 [dependency-groups]
 dev = [

@@ -1,4 +1,9 @@
-from src import *
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
 
 
 def general_check(value: str) -> None:
@@ -60,7 +65,7 @@ def parse_path_file(value: str) -> str:
     return value
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments.
     """

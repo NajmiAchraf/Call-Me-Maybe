@@ -1,17 +1,6 @@
-import sys
-from pathlib import Path
-
-# Get the path of the folder you want to add
-project_root = Path(__file__).resolve().parents[1]
-
-
-# Inject it into Python's lookup path list
-sys.path.append(str(project_root))
-sys.path.append(str(project_root / "src"))
-sys.path.append(str(project_root / "llm_sdk"))
-
-
-from src import *
+from .parser import parse_args
+from .generator import Generator
+from .x_json_loader import XLoader
 
 
 def main() -> None:

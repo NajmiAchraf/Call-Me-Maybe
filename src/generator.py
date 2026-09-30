@@ -1,5 +1,19 @@
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, List, cast
+
 from llm_sdk import Small_LLM_Model
-from src import *
+
+from .models import FunctionDefinition, Prompt
+from .tools import (
+    print_finish,
+    print_output_path,
+    print_start,
+    render_progress,
+)
 
 
 class Generator:
@@ -58,7 +72,9 @@ class Generator:
                 f'"{k}": <{v.type}>' for k, v in fn.parameters.items()
             )
             fn_docs.append(
-                f"- Name: {fn.name}\n  Description: {fn.description}\n  Parameters: {{{params}}}"
+                f"- Name: {fn.name}\n"
+                f"  Description: {fn.description}\n"
+                f"  Parameters: {{{params}}}"
             )
 
         tools_str = "\n".join(fn_docs)
@@ -85,13 +101,14 @@ class Generator:
         input_ids = self.slm_model.encode(prompt)
 
         if hasattr(input_ids, "tolist"):
-            ids: List[int] = (
+            ids = cast(
+                List[int],
                 input_ids[0].tolist()
                 if len(input_ids.shape) > 1
                 else input_ids.tolist()
             )
         else:
-            ids = List(input_ids)
+            ids = cast(List[int], list(input_ids))
 
         generated_text = ""
         open_braces = 0
@@ -110,7 +127,8 @@ class Generator:
             token_str = self.slm_model.decode([next_token_id])
             generated_text += token_str
 
-            # Stop condition: terminate generation once closing brace '}' completes JSON
+            # Stop condition: terminate generation once
+            # closing brace '}' completes JSON
             for char in token_str:
                 if char == "{":
                     open_braces += 1
@@ -126,7 +144,10 @@ class Generator:
     def _cast_parameters(
         self, fn_name: str, params: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Ensures all numbers (int and float) are converted to float format (e.g., 2 -> 2.0)."""
+        """
+            Ensures all numbers (int and float) are
+            converted to float format (e.g., 2 -> 2.0).
+        """
         fn_def = next(
             (f for f in self.fn_definitions if f.name == fn_name), None
         )
