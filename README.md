@@ -4,16 +4,16 @@
 
 ## Description
 
-Call Me Maybe is a function-calling tool that translates natural language prompts into structured function calls. The goal is not to answer the user directly, but to identify the correct function name and produce the required arguments in valid JSON.
+Call Me Maybe is a function-calling tool that translates natural language prompts into structured function calls. The objective is not to answer the prompt directly, but to identify the target function name and format its arguments into valid JSON.
 
-The project is designed around the constraints of small language models. Instead of relying on a model to spontaneously output correct JSON, the implementation uses constrained decoding to restrict token choices and keep the output schema-compliant. This makes the system reliable even with a small model such as Qwen3-0.6B.
+Designed around the constraints of small language models (SLM) such as Qwen3-0.6B, the system avoids relying on spontaneous model compliance. Instead, it guarantees reliable JSON generation by combining structured system prompt conditioning, greedy autoregressive decoding (`argmax`), dynamic syntax brace tracking, and deterministic output schema casting.
 
-The input comes from two JSON files:
+The system uses two input files:
 
 - `data/input/function_calling_tests.json`: natural language prompts to process
-- `data/input/functions_definition.json`: available functions, their parameter schemas, return types, and descriptions
+- `data/input/functions_definition.json`: function definitions, parameter schemas, descriptions, and return types
 
-The program writes its final results to:
+The final results are written to:
 
 - `data/output/function_calling_results.json`
 
@@ -22,46 +22,53 @@ The program writes its final results to:
 ### Requirements
 
 - Python 3.10+
-- `uv`
-- The provided `llm_sdk` package available in the repository
+- `uv` package manager
+- `llm_sdk` package (provided in the repository)
 
-### Install dependencies
+### Installation
 
 From the project root:
 
 ```bash
 uv sync
+
 ```
 
-### Run the program
+### Execution
 
-Use the Makefile shortcuts from the project root:
+Run the default pipeline using the Makefile:
 
 ```bash
 make install
 make run
+
 ```
 
-`make run` reads the default files from `data/input/` and writes the result to `data/output/function_calling_results.json`.
+`make run` processes default inputs from `data/input/` and writes results to `data/output/function_calling_results.json`.
 
-### Output
+Alternatively, pass explicit arguments directly to the module:
 
-The program generates a valid JSON array where each object contains exactly:
+```bash
+uv run python -m src --functions_definition path/to/functions.json --input path/to/tests.json --output path/to/results.json
 
-- `prompt`
-- `name`
-- `parameters`
+```
 
-Example:
+### Output Format
+
+The output is a valid JSON array containing structured call objects:
 
 ```json
 [
-	{
-		"prompt": "What is the sum of 2 and 3?",
-		"name": "fn_add_numbers",
-		"parameters": {"a": 2.0, "b": 3.0}
-	}
+  {
+    "prompt": "What is the sum of 2 and 3?",
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 2.0,
+      "b": 3.0
+    }
+  }
 ]
+
 ```
 
 ## Example Usage
@@ -69,107 +76,75 @@ Example:
 ```bash
 make run
 cat data/output/function_calling_results.json
-```
 
-The output file is regenerated from the current input prompts and function definitions.
+```
 
 ## Makefile
 
-The project is driven by the root `Makefile`:
+Key shortcuts provided in the root `Makefile`:
 
-- `make install` → runs `uv sync`
-- `make run` → runs `uv run python -m src` with the default input and output files
-- `make debug` → runs the same entry point under `pdb`
-- `make clean` → removes caches and compiled Python files
-- `make lint` → runs `flake8` and `mypy` on `src/`
-- `make lint-strict` → runs the stricter lint and type checks
-- `make moulinette` → grades the generated output with the provided moulinette tool
+* `make install` → Runs `uv sync`
+* `make run` → Executes `uv run python -m src` using default paths
+* `make debug` → Launches the entry point under `pdb`
+* `make clean` → Removes Python cache artifacts and bytecode
+* `make lint` → Runs `flake8` and `mypy` checks on `src/`
+* `make lint-strict` → Runs strict linting and type checking
+* `make moulinette` → Evaluates generated output against reference benchmarks
 
 ## Execution Flow
 
-The project runs with a short and explicit pipeline starting from the Makefile:
-
-1. `make run` calls `uv run python -m src` with the default input and output files.
-2. `src/__main__.py` loads the CLI arguments, then creates the loader and generator.
-3. `src/parser.py` validates the file paths and checks that the input files are valid JSON.
-4. `src/x_json_loader.py` reads `functions_definition.json` and `function_calling_tests.json` into `FunctionDefinition` and `Prompt` objects.
-5. `src/generator.py` loads `Small_LLM_Model`, reads the vocabulary, and uses constrained decoding to select a valid function name.
-6. The generator extracts the arguments for that function and writes `data/output/function_calling_results.json`.
-
-In short: Makefile starts the program, `__main__` wires the modules, the loader reads and validates the inputs, and the generator produces the final JSON output.
+1. **CLI Argument Parsing (`src/parser.py`)**: Validates flag names, verifies directory structures, and ensures inputs exist and contain valid JSON.
+2. **Data Deserialization (`src/x_json_loader.py`)**: Loads raw JSON into validated Pydantic models (`Prompt` and `FunctionDefinition`).
+3. **Pipeline Initialization (`src/__main__.py`)**: Instantiates `XLoader` and triggers the `Generator`.
+4. **Prompt Construction (`src/generator.py`)**: Formats function definitions and rules into the system prompt context for `Small_LLM_Model`.
+5. **Autoregressive Decoding (`src/generator.py`)**: Encodes the sequence, computes logits via `get_logits_from_input_ids()`, selects tokens using greedy `argmax`, and stops generation early using dynamic brace-depth tracking (`{` / `}`).
+6. **Parsing & Parameter Normalization (`src/generator.py`)**: Isolates the JSON payload using regex, parses it with `json.loads()`, and coerces numeric parameters to floats via `_cast_parameters()`.
+7. **Terminal UI (`src/tools.py`)**: Renders real-time progress animations and logs execution timing metrics.
 
 ## Algorithm Explanation
 
-The core algorithm is a short 6-step loop:
-
-1. **Inject tool schemas** into the prompt so the model sees the available functions, parameters, and types.
-2. **Tokenize the prompt** with `slm_model.encode()` to obtain input IDs.
-3. **Run the model** with `slm_model.get_logits_from_input_ids()` to get next-token logits.
-4. **Decode greedily** by choosing the best valid token and appending it back to the sequence.
-5. **Track JSON state** with brace balance so generation stops as soon as the JSON object is complete.
-6. **Extract and normalize** the final JSON with `json.loads()`, then cast the arguments to the expected types.
-
-This keeps the output structured, valid, and aligned with the function schema instead of depending on free-form generation.
+1. **Schema Injection**: Injects tool specifications, argument names, and types directly into system prompt instructions.
+2. **Tokenization**: Converts formatted system/user prompts into initial token IDs using `slm_model.encode()`.
+3. **Logit Evaluation**: Passes token sequence IDs through `slm_model.get_logits_from_input_ids()` to obtain candidate logit scores.
+4. **Greedy Selection**: Selects the top token (`argmax`) and appends it to the sequence via `slm_model.decode()`.
+5. **Brace Tracking**: Tracks `{` and `}` balance on each iteration to halt inference the instant the JSON payload completes.
+6. **Schema Coercion**: Extracts JSON via regex, parses it into Python dictionaries, and explicitly casts numeric values to `float` representation (`2` → `2.0`).
 
 ## Design Decisions
 
-- **Shared data models with Pydantic**: function definitions, prompts, and tool calls are validated with typed models.
-- **Thin package entry point**: `src/__main__.py` only wires the CLI, loader, and generator together.
-- **Relative imports**: internal modules import each other explicitly to avoid circular imports and package-level side effects.
-- **Constrained decoding over free generation**: the model is only allowed to choose from valid next tokens, reducing malformed output.
-- **Deterministic parameter extraction**: arguments are derived with predictable rules instead of relying on free-form generation.
-- **JSON-first workflow**: the program always reads and writes JSON, which keeps the pipeline stable and easy to validate.
+* **Pydantic Validation (`src/models.py`)**: Enforces strict typing for schemas and inputs, validating supported types (`number`, `integer`, `string`, `boolean`).
+* **Defensive CLI Validation (`src/parser.py`)**: Performs early checks on file paths, extension types, and JSON formatting to prevent runtime crashes.
+* **Explicit Float Coercion (`_cast_parameters`)**: Systematically converts integer and number parameters to Python `float` values to satisfy evaluator schema rules.
+* **Brace-Balance Early Termination**: Halts autoregressive sampling as soon as JSON syntax terminates, avoiding unnecessary token passes and preventing prose drift.
+* **Decoupled Terminal Utilities (`src/tools.py`)**: Moves execution timing and terminal progress bars out of model logic.
 
 ## Performance Analysis
 
-The design favors reliability over unconstrained creativity.
-
-- **Accuracy**: the function selection step is highly reliable because it is constrained by the known function set.
-- **Speed**: processing is lightweight because the final argument extraction is deterministic and does not require additional model passes for each prompt.
-- **Reliability**: output is always serialized through Python JSON tools, which guarantees valid JSON formatting.
-- **Scalability**: the approach remains practical for multiple prompts and changing function sets, because the function schema is loaded dynamically from the input file.
-
-For the project requirements, the main objective is not raw model intelligence but structural correctness. This solution is optimized for that goal.
+* **Accuracy**: Explicit system prompt context prevents tool hallucination and forces predictable function matching.
+* **Speed**: Brace tracking halts token generation early, cutting down inference latency.
+* **Reliability**: Combining regex extraction, `json.loads()`, and type casting ensures valid, evaluator-compliant JSON structure.
 
 ## Challenges Faced
 
-- **Import order and circular dependencies**: the package originally needed a clearer separation between shared declarations and implementation modules.
-- **Schema variability**: the function definitions can change during peer review, so the implementation must not depend on hardcoded function names only.
-- **Constrained decoding logic**: mapping tokens to valid next choices required careful use of the vocabulary file and model logits.
-- **JSON robustness**: the input files may be missing or malformed, so the loader and parser need defensive validation.
-- **Small-model reliability**: a 0.6B model is not guaranteed to emit perfect structured output, so the pipeline had to control generation step by step.
+* **SLM Prose Drift**: Preventing small models (0.6B parameters) from emitting preamble text or continuing after generating JSON.
+* **Float Compliance**: Ensuring integers are explicitly converted to float representations (`2.0`) to meet grading specifications.
+* **Defensive Error Handling**: Handling missing files, bad paths, or malformed JSON gracefully prior to model execution.
 
 ## Testing Strategy
 
-The implementation was validated with the following checks:
-
-- loading and parsing of `functions_definition.json`
-- loading and parsing of `function_calling_tests.json`
-- validation of Pydantic models for prompts and function schemas
-- end-to-end generation of `data/output/function_calling_results.json`
-- JSON validity checks on the produced output
-- manual tests with sample prompts such as sums, greetings, string reversal, square roots, and substitution tasks
-- edge-case handling for malformed paths, missing files, and invalid JSON content
-
-The output file is intended to be easy to verify during peer review with standard JSON tools.
+* Pydantic schema validation tests for `Prompt` and `FunctionDefinition` models.
+* End-to-end execution checks across test datasets (arithmetic, string operations, regex substitutions).
+* Defensive CLI path testing against missing files and malformed JSON payloads.
+* JSON structure and float formatting verification on `data/output/function_calling_results.json`.
 
 ## Resources
 
-### Documentation and references
+* Python `json`, `re`, and `argparse` documentation
+* Pydantic documentation
+* 42 Subject specifications for Call Me Maybe
+* `llm_sdk` reference implementation
 
-- Python `json` module documentation
-- Pydantic documentation
-- `argparse` documentation
-- Hugging Face / tokenization references for understanding token-level generation
-- The 42 subject for Call Me Maybe
-- The `llm_sdk` package provided with the project
+### AI Usage
 
-### AI usage
+AI assistance was utilized to help organize, refine, and edit the structure and technical clarity of this README document.
 
-AI assistance was used to help structure the README, organize the implementation explanation, and refine the description of the constrained decoding pipeline. The actual project behavior, file layout, and validation logic were aligned with the source code and the 42 subject requirements.
-
-## Additional Notes
-
-- The repository should contain the `src/` implementation, the `llm_sdk/` package, and the `data/input/` files.
-- The `data/output/` directory is generated when the program runs and should not be committed for submission.
-- The solution is designed to adapt to changing prompts and function definitions during evaluation.
