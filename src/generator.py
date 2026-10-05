@@ -17,13 +17,32 @@ from .tools import (
 
 
 class Generator:
+    """Generate function-calling results from prompts and definitions.
+
+    Attributes:
+        slm_model: The language model used to generate function calls.
+        prompts: The list of prompts to process.
+        fn_definitions: The available function definitions.
+        output_path: The path where generated results are written.
+    """
+
     def __init__(
         self,
         prompts: List[Prompt],
         fn_definitions: List[FunctionDefinition],
         output_path: str,
     ) -> None:
-        # 1. Initialize the SLM Model instance
+        """Initialize the generator and start processing prompts.
+
+        Args:
+            prompts: The prompts to process.
+            fn_definitions: The function definitions available to the model.
+            output_path: The output JSON file path.
+
+        Returns:
+            None.
+        """
+
         self.slm_model = Small_LLM_Model()
         self.prompts = prompts
         self.fn_definitions = fn_definitions
@@ -32,6 +51,12 @@ class Generator:
         self._run()
 
     def _run(self) -> None:
+        """Process each prompt, collect predictions, and save the results.
+
+        Returns:
+            None.
+        """
+
         results: List[Dict[str, Any]] = []
         total = len(self.prompts)
         print_start(total)
@@ -61,11 +86,21 @@ class Generator:
 
         print_finish()
 
-        # Save output file matching subject requirements (Section V.4)
+        # Save output file
         self._save_results(results)
 
     def _build_slm_prompt(self, user_prompt: str) -> str:
-        """Formats available tools into a clear context for the SLM."""
+        """Build the full prompt sent to the language model.
+
+        Args:
+            user_prompt: The natural-language request to transform into a
+                function call.
+
+        Returns:
+            A formatted prompt string containing the system instructions,
+            tool descriptions, and the user request.
+        """
+
         fn_docs = []
         for fn in self.fn_definitions:
             params = ", ".join(
@@ -91,13 +126,16 @@ class Generator:
     def _generate_with_slm(
         self, prompt: str, max_new_tokens: int = 100
     ) -> str:
+        """Generate text until a balanced JSON object is produced.
+
+        Args:
+            prompt: The prompt to encode and feed into the model.
+            max_new_tokens: The maximum number of tokens to generate.
+
+        Returns:
+            The generated text produced by the model.
         """
-        Core SLM Token Generation Loop using:
-        - slm_model.encode()
-        - slm_model.get_logits_from_input_ids()
-        - slm_model.decode()
-        """
-        # 1. Encode string prompt into initial token IDs
+
         input_ids = self.slm_model.encode(prompt)
 
         if hasattr(input_ids, "tolist"):
@@ -114,21 +152,15 @@ class Generator:
         open_braces = 0
         json_started = False
 
-        # 2. Token-by-token loop
         for _ in range(max_new_tokens):
-            # Retrieve logits vector from Qwen model for current sequence
             logits = self.slm_model.get_logits_from_input_ids(ids)
 
-            # Argmax selection for greedy token decoding
             next_token_id = int(logits.index(max(logits)))
             ids.append(next_token_id)
 
-            # Decode single token ID to text string
             token_str = self.slm_model.decode([next_token_id])
             generated_text += token_str
 
-            # Stop condition: terminate generation once
-            # closing brace '}' completes JSON
             for char in token_str:
                 if char == "{":
                     open_braces += 1
@@ -144,10 +176,16 @@ class Generator:
     def _cast_parameters(
         self, fn_name: str, params: Dict[str, Any]
     ) -> Dict[str, Any]:
+        """Normalize parameter values to match the target function schema.
+
+        Args:
+            fn_name: The function name whose schema should be used.
+            params: The raw parameter values produced by the model.
+
+        Returns:
+            A dictionary with values converted to the expected types.
         """
-            Ensures all numbers (int and float) are
-            converted to float format (e.g., 2 -> 2.0).
-        """
+
         fn_def = next(
             (f for f in self.fn_definitions if f.name == fn_name), None
         )
@@ -159,7 +197,6 @@ class Generator:
             expected_type = fn_def.parameters.get(param_name)
             type_str = expected_type.type if expected_type else ""
 
-            # Convert any integer/number parameter directly to float
             if type_str in ["number", "integer"] or isinstance(
                 val, (int, float)
             ):
@@ -177,6 +214,16 @@ class Generator:
         return casted
 
     def _parse_slm_output(self, raw_text: str) -> Dict[str, Any]:
+        """Extract and validate the first JSON object emitted by the model.
+
+        Args:
+            raw_text: The raw generated text returned by the model.
+
+        Returns:
+            A dictionary with ``name`` and ``parameters`` keys, or a fallback
+            structure when parsing fails.
+        """
+
         try:
             match = re.search(r"\{.*\}", raw_text, re.DOTALL)
             if match:
@@ -189,7 +236,6 @@ class Generator:
                     fn_name = data["name"]
                     raw_params = data.get("parameters", {})
 
-                    # Run parameter values through float conversion
                     data["parameters"] = self._cast_parameters(
                         fn_name, raw_params
                     )
@@ -200,6 +246,15 @@ class Generator:
         return {"name": "none", "parameters": {}}
 
     def _save_results(self, results: List[Dict[str, Any]]) -> None:
+        """Write the generated results to the configured output path.
+
+        Args:
+            results: The list of parsed function-call results.
+
+        Returns:
+            None.
+        """
+
         out_path = Path(self.output_path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:

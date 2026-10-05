@@ -7,8 +7,17 @@ from pathlib import Path
 
 
 def general_check(value: str) -> None:
-    """
-    Check if the value is a valid path.
+    """Reject path strings containing unsupported characters or extensions.
+
+    Args:
+        value: The path-like string to validate.
+
+    Returns:
+        None.
+
+    Raises:
+        argparse.ArgumentTypeError: If the path contains invalid characters or
+            does not end with ``.json``.
     """
 
     if (
@@ -28,8 +37,17 @@ def general_check(value: str) -> None:
 
 
 def parse_path_accuracy(value: str) -> str:
-    """
-    Parse accuracy of path
+    """Validate that each parent directory in the path exists.
+
+    Args:
+        value: The path-like string to validate.
+
+    Returns:
+        The original value when all parent directories exist.
+
+    Raises:
+        argparse.ArgumentTypeError: If one of the parent directories is
+            missing.
     """
 
     general_check(value)
@@ -46,8 +64,16 @@ def parse_path_accuracy(value: str) -> str:
 
 
 def parse_path_file(value: str) -> str:
-    """
-    Parse a file path.
+    """Validate a JSON file path and ensure the file contains valid JSON.
+
+    Args:
+        value: The file path to validate.
+
+    Returns:
+        The original value when the path exists and contains valid JSON.
+
+    Raises:
+        argparse.ArgumentTypeError: If the file is missing or not valid JSON.
     """
 
     value = parse_path_accuracy(value)
@@ -66,8 +92,10 @@ def parse_path_file(value: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments.
+    """Parse command-line arguments for input, output, and definitions.
+
+    Returns:
+        The parsed command-line arguments namespace.
     """
 
     project_root = Path(__file__).resolve().parents[1]

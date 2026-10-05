@@ -7,15 +7,15 @@ begin: float = 0.0
 
 
 def elapsed_time(start: float) -> str:
-    """
-    Format the elapsed time from the start time to the current time.
+    """Format the elapsed time since ``start`` for terminal output.
 
     Args:
-        start (float): The start time in seconds.
+        start: The start timestamp in seconds.
 
     Returns:
-        str: The formatted elapsed time.
+        A human-readable elapsed time string.
     """
+
     elapsed_time = time.time() - start
     delta = timedelta(seconds=elapsed_time)
 
@@ -34,13 +34,32 @@ def elapsed_time(start: float) -> str:
 
 
 def print_start(total: int) -> None:
+    """Print the initial execution banner and start the timer.
+
+    Args:
+        total: The total number of prompts that will be processed.
+
+    Returns:
+        None.
+    """
+
     global begin
     begin = time.time()
     print(f"\n🚀 Execution started: Processing {total} prompt(s)...\n")
 
 
 def render_progress(current: int, total: int, current_prompt: str) -> None:
-    """Renders an inline animated terminal progress bar."""
+    """Render a one-line progress bar for the currently processed prompt.
+
+    Args:
+        current: The current prompt index, starting at 1.
+        total: The total number of prompts.
+        current_prompt: The prompt text being processed.
+
+    Returns:
+        None.
+    """
+
     percent = int((current / total) * 100)
     bar_length = 20
     filled = int(bar_length * current // total)
@@ -61,11 +80,25 @@ def render_progress(current: int, total: int, current_prompt: str) -> None:
 
 
 def print_finish() -> None:
-    # Finalize status bar line and output completed state
+    """Print the completion banner with the total elapsed time.
+
+    Returns:
+        None.
+    """
+
     sys.stdout.write(f"\n\n✨ Done! All prompts processed successfully."
                      f" Elapsed time: {elapsed_time(begin)}\n")
     sys.stdout.flush()
 
 
 def print_output_path(output_path: str) -> None:
+    """Report where the generated JSON output was written.
+
+    Args:
+        output_path: The path to the generated output file.
+
+    Returns:
+        None.
+    """
+
     print(f"\n📄 Output written to: {output_path}\n")

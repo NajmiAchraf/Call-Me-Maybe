@@ -14,6 +14,15 @@ except KeyboardInterrupt:
 
 
 def main() -> None:
+    """Run the full Call Me Maybe pipeline.
+
+    Parses command-line arguments, loads the JSON inputs, and executes the
+    generator to produce the output file.
+
+    Returns:
+        None.
+    """
+
     args = parse_args()
 
     x_loader = XLoader(
@@ -33,4 +42,7 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\n\nInterrupted by user\n\n")
+        exit(1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
         exit(1)
