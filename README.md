@@ -30,8 +30,7 @@ The final results are written to:
 From the project root:
 
 ```bash
-uv sync
-
+make install
 ```
 
 ### Execution
@@ -39,9 +38,7 @@ uv sync
 Run the default pipeline using the Makefile:
 
 ```bash
-make install
 make run
-
 ```
 
 `make run` processes default inputs from `data/input/` and writes results to `data/output/function_calling_results.json`.
@@ -50,7 +47,6 @@ Alternatively, pass explicit arguments directly to the module:
 
 ```bash
 uv run python -m src --functions_definition path/to/functions.json --input path/to/tests.json --output path/to/results.json
-
 ```
 
 ### Output Format
@@ -68,7 +64,6 @@ The output is a valid JSON array containing structured call objects:
     }
   }
 ]
-
 ```
 
 ## Example Usage
@@ -76,7 +71,6 @@ The output is a valid JSON array containing structured call objects:
 ```bash
 make run
 cat data/output/function_calling_results.json
-
 ```
 
 ## Makefile

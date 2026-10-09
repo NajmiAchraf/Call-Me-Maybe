@@ -2,7 +2,6 @@ import sys
 import time
 from datetime import timedelta
 
-
 begin: float = 0.0
 
 
@@ -73,7 +72,7 @@ def render_progress(current: int, total: int, current_prompt: str) -> None:
     )
 
     # \r resets the cursor to the beginning of the current terminal line
-    status_line = f'\r🤖 [{current}/{total}] '
+    status_line = f"\r🤖 [{current}/{total}] "
     status_line += f'[{bar}] {percent:3d}% | Processing: "{short_prompt}"'
     sys.stdout.write(status_line.ljust(80))
     sys.stdout.flush()
@@ -86,8 +85,10 @@ def print_finish() -> None:
         None.
     """
 
-    sys.stdout.write(f"\n\n✨ Done! All prompts processed successfully."
-                     f" Elapsed time: {elapsed_time(begin)}\n")
+    sys.stdout.write(
+        f"\n\n✨ Done! All prompts processed successfully."
+        f" Elapsed time: {elapsed_time(begin)}\n"
+    )
     sys.stdout.flush()
 
 

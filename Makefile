@@ -32,4 +32,7 @@ lint-strict:
 	uv run mypy src/ --strict
 
 moulinette:
-	cd moulinette && uv run moulinette grade_student_answers ../data/output/function_calling_results.json
+	cd moulinette && uv run moulinette grade_student_answers --set private --student_answer_path ../data/output/function_calling_results.json
+
+moulinette-test:
+	uv run moulinette prepare_exercises --set private

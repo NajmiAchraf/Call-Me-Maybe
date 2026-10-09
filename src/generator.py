@@ -141,9 +141,11 @@ class Generator:
         if hasattr(input_ids, "tolist"):
             ids = cast(
                 List[int],
-                input_ids[0].tolist()
-                if len(input_ids.shape) > 1
-                else input_ids.tolist()
+                (
+                    input_ids[0].tolist()
+                    if len(input_ids.shape) > 1
+                    else input_ids.tolist()
+                ),
             )
         else:
             ids = cast(List[int], list(input_ids))
